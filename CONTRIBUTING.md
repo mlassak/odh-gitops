@@ -11,7 +11,7 @@ Thank you for your interest in contributing to the OpenShift AI GitOps repositor
   - [Add a New Dependency Operator](#add-a-new-dependency-operator)
     - [Step 1: Create a new operator component](#step-1-create-a-new-operator-component)
     - [Step 2: Create Required Manifests](#step-2-create-required-manifests)
-    - [Step 3: Create Operator Directory](#step-3-create-operator-directory)
+    - [Step 3: Create Dependency Operator Directory](#step-3-create-dependency-operator-directory)
     - [Step 4: Update Operators Parent Kustomization](#step-4-update-operators-parent-kustomization)
     - [Step 5: Document the Operator](#step-5-document-the-operator)
     - [Step 6: Test Your Changes](#step-6-test-your-changes)
@@ -50,7 +50,7 @@ Create the files required to install the dependency operator in your operator di
 > [!NOTE]
 > Do not set namespace name in the kustomization.yaml file, but set it as string where needed.
 
-### Step 3: Create Operator Directory
+### Step 3: Create Dependency Operator Directory
 
 Create a new directory under `dependencies/operators/` named after your operator:
 
