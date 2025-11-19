@@ -7,8 +7,8 @@ This repository provides a GitOps-based approach to deploying and managing Red H
 - [Red Hat OpenShift AI - GitOps Repository](#red-hat-openshift-ai---gitops-repository)
   - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
-  - [Repository Structure](#repository-structure)
     - [How the Structure Works](#how-the-structure-works)
+    - [Dependencies](#dependencies)
   - [Quick Start](#quick-start)
     - [Prerequisites](#prerequisites)
     - [Basic Installation](#basic-installation)
@@ -18,7 +18,6 @@ This repository provides a GitOps-based approach to deploying and managing Red H
     - [Install a subset of dependencies](#install-a-subset-of-dependencies)
   - [Usage Guidelines](#usage-guidelines)
     - [For Administrators](#for-administrators)
-    - [For Development Teams](#for-development-teams)
   - [Release Strategy](#release-strategy)
 
 ## Overview
@@ -29,35 +28,6 @@ This repository provides a template for a standardized way to deploy these prere
 
 This repository can work for both GitOps tools (ArgoCD, Flux, etc.) and `oc` or `kubectl` CLI.
 
-## Repository Structure
-
-The repository is structured using Kustomize to allow for easy customization and composition:
-
-```text
-rhoai-gitops/
-└── components/                     # kustomize components to be reused
-    ├── components/                 # The DSC components
-    │   ├── dashboard/              # Dashboard component patches
-│   |   └── ...                     # Other components
-    ├── dsc/                        # DataScienceCluster base
-    ├── dsci/                       # DSCInitialization base
-    ├── operators/                  # Dependency operators 
-    │   ├── cert-manager/           # Specific dependency operator configuration
-│   |   └── ...                     # Other dependency operators
-├── dependencies/                   # External dependencies
-│   ├── kustomization.yaml          # Installs all dependencies
-│   └── operators/                  # Dependency operators
-│       ├── kustomization.yaml
-│       ├── cert-manager/          # Install a specific dependency operator
-│       ├── kueue-operator/        # Install a specific dependency operator
-│       └── ...                    # Other dependency operators
-├── rhoai/                         # Phase 2: OpenShift AI specific installation and components
-│   ├── dashboard/                 # Dashboard component patches
-│   ├── kueue/                     # Kueue component patches
-│   ├── ...                        # Other components
-│   └── kustomization.yaml         # Installs all rhoai components
-```
-
 ### How the Structure Works
 
 The repository is designed to be applied in **layers**, providing flexibility in deployment:
@@ -66,6 +36,12 @@ The repository is designed to be applied in **layers**, providing flexibility in
 2. **Grouped Installation**: Top-level folders contain `kustomization.yaml` files that include all items within them
 3. **Full Installation**: The `rhoai/kustomization.yaml` installs the entire OpenShift AI stack with a single command
 4. **Composition**: Each component is self-contained and includes its required dependencies
+
+### Dependencies
+
+| Operator | Purpose | Namespace | Required By |
+|----------|---------|-----------|-------------|
+| **Cert-Manager** | Automated certificate management and TLS provisioning | `cert-manager-operator` | Model Serving (Kueue, Ray) |
 
 ## Quick Start
 
@@ -134,12 +110,6 @@ If the Kueue operator is needed later, it can be uncommented and the changes app
 4. **Test** thoroughly in a non-production environment
 5. **Maintain** your fork with updates and customizations
 6. **Apply** using your GitOps tool (ArgoCD, Flux, etc.) or `kubectl`
-
-### For Development Teams
-
-1. Clone the repository
-2. Apply the desired dependencies
-3. Make local modifications as needed
 
 ## Release Strategy
 
