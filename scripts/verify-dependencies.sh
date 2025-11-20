@@ -1,15 +1,45 @@
+#!/usr/bin/env bash
+#
+# verify-dependencies.sh - Verify operator dependencies are installed and ready
+#
+# Verifies:
+#   1. All operator CSVs reach "Succeeded" phase
+#   2. Custom checks for specific operators (e.g., pod readiness)
+#
+# Requirements: Bash 4+, oc CLI
+# Exit codes: 0 = success, 1 = failure
+#
+
+set -e
+
 echo "Verifying dependencies..."
 
-# wait_for_resource - Wait for Kubernetes resources to exist (retries every 5s)
+# ==============================================================================
+# OPERATOR DEFINITIONS
+# ==============================================================================
+
+# Operators to verify: [subscription_name]="namespace"
+# To add an operator: Add a line below and custom checks in the "Custom Checks" section if needed
+declare -A OPERATORS=(
+    [openshift-cert-manager-operator]="cert-manager-operator"
+    [kueue-operator]="openshift-kueue-operator"
+    [cluster-observability-operator]="openshift-cluster-observability-operator"
+)
+
+
+# ==============================================================================
+# HELPER FUNCTIONS
+# ==============================================================================
+
+# Wait for Kubernetes resources to exist (retries every 5s)
 # Usage: wait_for_resource <namespace> <resource_type> <label> [timeout_seconds]
-# Returns: 0 on success, 1 on timeout
 # Example: wait_for_resource "default" "pods" "app=myapp" 300
 wait_for_resource() {
     local namespace=$1
     local resource_type=$2
     local label=$3
+    local timeout=${4:-300}
     local description="resource ${resource_type} in namespace ${namespace} with label ${label}"
-    local timeout=${5:-300}
     local interval=5
     local elapsed=0
 
@@ -26,9 +56,8 @@ wait_for_resource() {
     return 0
 }
 
-# wait_for_csv_succeeded - Wait for CSV (ClusterServiceVersion) to reach Succeeded phase
+# Wait for CSV (ClusterServiceVersion) to reach "Succeeded" phase
 # Usage: wait_for_csv_succeeded <namespace> <csv_name> [timeout_seconds]
-# Returns: 0 on success, 1 on timeout or failure
 # Example: wait_for_csv_succeeded "cert-manager" "cert-manager.v1.15.0" 300
 wait_for_csv_succeeded() {
     local namespace=$1
@@ -62,10 +91,9 @@ wait_for_csv_succeeded() {
     done
 }
 
-# wait_for_subscription_csv - Wait for CSV from a Subscription to reach Succeeded phase
+# Wait for a Subscription's CSV to be assigned and reach "Succeeded" phase
 # Usage: wait_for_subscription_csv <namespace> <subscription_name> [timeout_seconds]
-# Returns: 0 on success, 1 on timeout or failure
-# Example: wait_for_subscription_csv "cert-manager" "cert-manager" 300
+# Example: wait_for_subscription_csv "cert-manager-operator" "openshift-cert-manager-operator"
 wait_for_subscription_csv() {
     local namespace=$1
     local subscription_name=$2
@@ -98,26 +126,38 @@ wait_for_subscription_csv() {
     return $?
 }
 
-# cert-manager
-echo "Waiting for cert-manager to be ready..."
-if ! wait_for_subscription_csv "cert-manager-operator" "openshift-cert-manager-operator"; then
-    exit 1
-fi
+# ==============================================================================
+# CSV VERIFICATION
+# ==============================================================================
+
+echo ""
+echo "Step 1: Verifying operator CSVs..."
+echo ""
+
+for subscription_name in "${!OPERATORS[@]}"; do
+    read -r namespace <<< "${OPERATORS[$subscription_name]}"
+
+    echo "Waiting for ${subscription_name} to be ready..."
+    if ! wait_for_subscription_csv "${namespace}" "${subscription_name}"; then
+        exit 1
+    fi
+    echo "✓ ${subscription_name} CSV is ready"
+done
+
+# ==============================================================================
+# CUSTOM CHECKS
+# ==============================================================================
+
+echo ""
+echo "Step 2: Running custom verification checks..."
+echo ""
+
+# cert-manager: Verify pods are running (CSV success doesn't guarantee pod readiness)
+echo "Checking cert-manager pods..."
 if ! wait_for_resource "cert-manager" "pods" "app.kubernetes.io/instance=cert-manager"; then
     exit 1
 fi
-echo "✓ cert-manager is installed and ready"
+echo "✓ cert-manager pods are running"
 
-# kueue
-echo "Waiting for kueue to be ready..."
-if ! wait_for_subscription_csv "openshift-kueue-operator" "kueue-operator"; then
-    exit 1
-fi
-echo "✓ kueue is installed and ready"
-
-# cluster-observability-operator
-echo "Waiting for cluster-observability-operator to be ready..."
-if ! wait_for_subscription_csv "openshift-cluster-observability-operator" "cluster-observability-operator"; then
-    exit 1
-fi
-echo "✓ cluster-observability-operator is installed and ready"
+echo ""
+echo "✓ All dependencies are installed and ready"
