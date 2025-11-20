@@ -1,6 +1,6 @@
 # Red Hat OpenShift AI - GitOps Repository
 
-This repository provides a GitOps-based approach to deploying and managing Red Hat OpenShift AI and its dependencies using Kustomize. It serves as a standardized, repeatable, and automated way to set up the complete OpenShift AI stack.
+This repository provides a GitOps-based approach to deploying and managing Red Hat OpenShift AI and its dependencies using Kustomize. It serves as a standardized, repeatable, and automated way to configure the complete OpenShift AI stack.
 
 ## Table of Contents
 
@@ -9,40 +9,43 @@ This repository provides a GitOps-based approach to deploying and managing Red H
   - [Overview](#overview)
     - [How the Structure Works](#how-the-structure-works)
     - [Dependencies](#dependencies)
+      - [Adding New Dependencies](#adding-new-dependencies)
   - [Quick Start](#quick-start)
     - [Prerequisites](#prerequisites)
     - [Basic Installation](#basic-installation)
   - [Installation Methods](#installation-methods)
     - [Install All Dependencies](#install-all-dependencies)
-    - [Install Specific Dependency](#install-specific-dependency)
-    - [Install a subset of dependencies](#install-a-subset-of-dependencies)
+    - [Install Specific Dependencies](#install-specific-dependencies)
+    - [Install a Subset of Dependencies](#install-a-subset-of-dependencies)
   - [Usage Guidelines](#usage-guidelines)
     - [For Administrators](#for-administrators)
   - [Release Strategy](#release-strategy)
 
 ## Overview
 
-This repository addresses the OpenShift AI dependencies that are treated as **administrator-owned resources** that we help bootstrap.
+This repository addresses OpenShift AI dependencies that are treated as **administrator-owned resources**. It provides a template for deploying these prerequisites in a standardized way, simplifying the administrator's workflow by providing a single source of truth for the entire OpenShift AI stack.
 
-This repository provides a template for a standardized way to deploy these prerequisites, simplifying the administrator's workflow by providing a single source of truth for the entire OpenShift AI stack.
-
-This repository can work for both GitOps tools (ArgoCD, Flux, etc.) and `oc` or `kubectl` CLI.
+This repository works with both GitOps tools (ArgoCD, Flux, etc.) and `oc` or `kubectl` CLI.
 
 ### How the Structure Works
 
 The repository is designed to be applied in **layers**, providing flexibility in deployment:
 
-1. **Granular Installation**: Each dependency or component has its own `kustomization.yaml` and can be applied independently
-2. **Grouped Installation**: Top-level folders contain `kustomization.yaml` files that include all items within them
-3. **Full Installation**: The `rhoai/kustomization.yaml` installs the entire OpenShift AI stack with a single command
-4. **Composition**: Each component is self-contained and includes its required dependencies
+1. **Granular Installation**: Each dependency or component has its own `kustomization.yaml` and can be applied independently.
+2. **Grouped Installation**: Top-level folders contain `kustomization.yaml` files that include all items within them.
+3. **Composition**: Each component is self-contained and includes its required dependencies.
 
 ### Dependencies
 
 | Operator | Purpose | Namespace | Required By |
 |----------|---------|-----------|-------------|
-| **Cert-Manager** | Automated certificate management and TLS provisioning | `cert-manager-operator` | Model Serving (Kueue, Ray) |
-| **Kueue** | Job queue for distributed workloads | `openshift-kueue-operator` | Model Serving (Ray) |
+| **Cert-Manager** | Certificate management and TLS provisioning | `cert-manager-operator` | Model Serving (Kueue, Ray) |
+| **Kueue** | Job queue for distributed workloads | `openshift-kueue-operator` | Model Serving (Ray), Trainer |
+| **Cluster Observability Operator** | Cluster observability and monitoring | `openshift-cluster-observability-operator` | Monitoring |
+
+#### Adding New Dependencies
+
+To add a new dependency, follow the [Contributing](CONTRIBUTING.md#add-a-new-dependency-operator) guide.
 
 ## Quick Start
 
@@ -51,7 +54,7 @@ The repository is designed to be applied in **layers**, providing flexibility in
 - OpenShift cluster (version 4.19 or later)
 - `kubectl` or `oc` CLI installed
 - Cluster admin permissions
-- Kustomize v5 or later (or use `kubectl apply -k`)
+- Kustomize v5 or later (optional - `kubectl` has built-in Kustomize support)
 
 ### Basic Installation
 
@@ -60,7 +63,7 @@ The repository is designed to be applied in **layers**, providing flexibility in
 git clone https://github.com/davidebianchi/rhoai-gitops.git
 cd rhoai-gitops
 
-# 2. Checkout the branch matching your OpenShift AI version
+# 2. Check out the branch matching your OpenShift AI version
 git checkout rhoai-3.0
 
 # 3. Install all dependencies
@@ -78,17 +81,17 @@ kubectl apply -k dependencies
 kubectl apply -k dependencies
 ```
 
-### Install Specific Dependency
+### Install Specific Dependencies
 
 ```bash
 kubectl apply -k dependencies/operators/cert-manager
 kubectl apply -k dependencies/operators/kueue-operator
 ```
 
-### Install a subset of dependencies
+### Install a Subset of Dependencies
 
-It is possible to modify the dependencies/operators/kustomization.yaml to comment out the dependencies you don't need.
-For example, if the Kueue operator is not needed, it can be commented out like this:
+You can modify `dependencies/operators/kustomization.yaml` to comment out dependencies you don't need.
+For example, if the Kueue operator is not needed, comment it out like this:
 
 ```yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -99,7 +102,11 @@ components:
   # - ../../components/operators/kueue-operator
 ```
 
-If the Kueue operator is needed later, it can be uncommented and the changes applied.
+If you need the Kueue operator later, uncomment it and apply the changes:
+
+```bash
+kubectl apply -k dependencies/operators
+```
 
 ## Usage Guidelines
 
@@ -115,5 +122,5 @@ If the Kueue operator is needed later, it can be uncommented and the changes app
 ## Release Strategy
 
 - **No Formal Releases**: This repository does not have official releases. Users are expected to clone or fork the repository and use it as a basis for their own configurations.
-- **Branch per OpenShift AI Version**: Each version of OpenShift AI has a dedicated branch (e.g., `rhoai-3.0`, `rhoai-3.1`) to ensure compatibility
-- **Version Selection**: Always select the branch corresponding to your target OpenShift AI version
+- **Branch per OpenShift AI Version**: Each version of OpenShift AI has a dedicated branch (e.g., `rhoai-3.0`, `rhoai-3.1`) to ensure compatibility.
+- **Version Selection**: Always select the branch that corresponds to your target OpenShift AI version.

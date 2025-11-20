@@ -114,3 +114,10 @@ if ! wait_for_subscription_csv "openshift-kueue-operator" "kueue-operator"; then
     exit 1
 fi
 echo "✓ kueue is installed and ready"
+
+# cluster-observability-operator
+echo "Waiting for cluster-observability-operator to be ready..."
+if ! wait_for_subscription_csv "openshift-cluster-observability-operator" "cluster-observability-operator"; then
+    exit 1
+fi
+echo "✓ cluster-observability-operator is installed and ready"

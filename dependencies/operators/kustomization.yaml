@@ -4,3 +4,4 @@ kind: Kustomization
 components:
   - ../../components/operators/cert-manager
   - ../../components/operators/kueue-operator
+  - ../../components/operators/cluster-observability-operator
