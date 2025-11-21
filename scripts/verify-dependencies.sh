@@ -18,12 +18,12 @@ echo "Verifying dependencies..."
 # OPERATOR DEFINITIONS
 # ==============================================================================
 
-# Operators to verify: [subscription_name]="namespace"
+# Operators to verify: [subscription_name]="namespace pod_label_selector"
 # To add an operator: Add a line below and custom checks in the "Custom Checks" section if needed
 declare -A OPERATORS=(
-    [openshift-cert-manager-operator]="cert-manager-operator"
-    [kueue-operator]="openshift-kueue-operator"
-    [cluster-observability-operator]="openshift-cluster-observability-operator"
+    [openshift-cert-manager-operator]="cert-manager-operator name=cert-manager-operator"
+    [kueue-operator]="openshift-kueue-operator name=openshift-kueue-operator"
+    [cluster-observability-operator]="openshift-cluster-observability-operator app.kubernetes.io/name=observability-operator"
 )
 
 
@@ -135,13 +135,19 @@ echo "Step 1: Verifying operator CSVs..."
 echo ""
 
 for subscription_name in "${!OPERATORS[@]}"; do
-    read -r namespace <<< "${OPERATORS[$subscription_name]}"
+    read -r namespace label_selector <<< "${OPERATORS[$subscription_name]}"
 
     echo "Waiting for ${subscription_name} to be ready..."
     if ! wait_for_subscription_csv "${namespace}" "${subscription_name}"; then
         exit 1
     fi
     echo "✓ ${subscription_name} CSV is ready"
+
+    echo "Waiting for ${subscription_name} pods to be ready..."
+    if ! wait_for_resource "${namespace}" "pods" "${label_selector}"; then
+        exit 1
+    fi
+    echo "✓ ${subscription_name} pods are running"
 done
 
 # ==============================================================================
@@ -161,3 +167,10 @@ echo "✓ cert-manager pods are running"
 
 echo ""
 echo "✓ All dependencies are installed and ready"
+
+# cluster-observability-operator: Verify pods are running
+echo "Checking cluster-observability-operator pods..."
+if ! wait_for_resource "openshift-cluster-observability-operator" "pods" "app.kubernetes.io/part-of=observability-operator"; then
+    exit 1
+fi
+echo "✓ cluster-observability-operator pods are running"
