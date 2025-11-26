@@ -29,8 +29,7 @@ $(KUSTOMIZE): $(LOCALBIN)
 .PHONY: validate
 validate: kustomize ## Build all kustomize directories in the project
 	@echo "Building all kustomizations..."
-	$(call kustomize-build-folder,dependencies)
-	$(call kustomize-build-folder,components)
+	$(call kustomize-build-folder,$(PWD))
 	@echo ""
 	@echo "All kustomizations built successfully! ✓"
 
@@ -49,6 +48,8 @@ apply: kustomize ## Apply kustomize directory as passed as argument
 apply-and-verify-dependencies: kustomize ## Apply and verify dependencies
 	@$(MAKE) apply FOLDER=dependencies
 	@bash ./scripts/verify-dependencies.sh
+	@$(MAKE) apply FOLDER=configurations
+	@echo "All dependencies and configurations applied successfully! ✓"
 
 .PHONY: remove
 remove: kustomize ## Remove kustomize directory as passed as argument
@@ -57,11 +58,12 @@ remove: kustomize ## Remove kustomize directory as passed as argument
 		echo "Error: FOLDER variable is required. Usage: make apply FOLDER=<path>"; \
 		exit 1; \
 	fi
-	$(KUSTOMIZE) build $(FOLDER) | kubectl delete $(KUBECTL_FLAGS) -f -
+	$(KUSTOMIZE) build $(FOLDER) | kubectl delete --ignore-not-found $(KUBECTL_FLAGS) -f -
 
 .PHONY: remove-all-dependencies
 remove-all-dependencies:
 	@echo "Removing all dependencies..."
+	@$(MAKE) remove FOLDER=configurations
 	@$(MAKE) remove FOLDER=dependencies
 	@bash ./scripts/remove-dependencies.sh
 	@echo "All dependencies removed successfully! ✓"
@@ -99,6 +101,8 @@ define kustomize-build-folder
 	exit 1; \
 fi
 @for dir in $$(find $(1) -name "kustomization.yaml" -o -name "kustomization.yml" | xargs -n1 dirname | sort -u); do \
-	$(KUSTOMIZE) build $$dir > /dev/null && echo "  ✓ $$dir" || (echo "  ✗ $$dir FAILED" && exit 1); \
+	rel_dir=$${dir#$(1)/}; \
+	[ "$$rel_dir" = "$$dir" ] && rel_dir="."; \
+	$(KUSTOMIZE) build $$dir > /dev/null && echo "  ✓ $$rel_dir" || (echo "  ✗ $$rel_dir FAILED" && exit 1); \
 done
 endef

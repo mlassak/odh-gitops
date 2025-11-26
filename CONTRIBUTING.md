@@ -13,11 +13,13 @@ Thank you for your interest in contributing to the OpenShift AI GitOps repositor
     - [Step 2: Create Required Manifests](#step-2-create-required-manifests)
     - [Step 3: Create Dependency Operator Directory](#step-3-create-dependency-operator-directory)
     - [Step 4: Update Operators Parent Kustomization](#step-4-update-operators-parent-kustomization)
-    - [Step 5: Update Scripts](#step-5-update-scripts)
+    - [Step 5: Add Base Configuration for Your Operator](#step-5-add-base-configuration-for-your-operator)
+    - [Step 6: Update Configurations Parent Kustomization](#step-6-update-configurations-parent-kustomization)
+    - [Step 7: Update Scripts](#step-7-update-scripts)
       - [Verify Dependencies Script](#verify-dependencies-script)
       - [Remove Dependencies Script](#remove-dependencies-script)
-    - [Step 6: Document the Operator](#step-6-document-the-operator)
-    - [Step 7: Test Your Changes](#step-7-test-your-changes)
+    - [Step 8: Document the Operator](#step-8-document-the-operator)
+    - [Step 9: Test Your Changes](#step-9-test-your-changes)
   - [Testing Your Changes](#testing-your-changes)
     - [Local Validation](#local-validation)
   - [Pull Requests](#pull-requests)
@@ -90,7 +92,26 @@ components:
   - ../../../components/operators/your-operator/ # Add this line
 ```
 
-### Step 5: Update Scripts
+### Step 5: Add Base Configuration for Your Operator
+
+If your operator needs a configuration which depends on CRDs installed by OLM, you can add it to the `configurations/your-operator` folder.
+
+For an example, see the [Kueue configuration](configurations/kueue-operator/) directory.
+
+### Step 6: Update Configurations Parent Kustomization
+
+Add your operator to `configurations/kustomization.yaml`:
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ...
+  - your-operator
+```
+
+### Step 7: Update Scripts
 
 Update the maintenance scripts to support your new operator.
 
@@ -112,14 +133,14 @@ Only update [`scripts/remove-dependencies.sh`](./scripts/remove-dependencies.sh)
 
 For most operators, the default cleanup process is sufficient, and no changes are needed.
 
-### Step 6: Document the Operator
+### Step 8: Document the Operator
 
 Add documentation about your operator:
 
 1. Update `README.md` with operator information.
 2. Add any special configuration requirements.
 
-### Step 7: Test Your Changes
+### Step 9: Test Your Changes
 
 See [Testing Your Changes](#testing-your-changes) section below.
 
@@ -131,13 +152,7 @@ Always test your changes before submitting a PR.
 
 1. **Validate Kustomize Build**:
 
-   ```bash
-   # Test building your specific operator/component
-   kustomize build dependencies/operators/your-operator
-
-   # Test building all dependencies
-   kustomize build dependencies
-   ```
+  Run `make validate` to validate the kustomization files.
 
 2. **Check for YAML Errors**:
 

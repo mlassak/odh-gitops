@@ -12,10 +12,14 @@ This repository provides a GitOps-based approach to deploying and managing Red H
       - [Adding New Dependencies](#adding-new-dependencies)
   - [Quick Start](#quick-start)
     - [Prerequisites](#prerequisites)
-    - [Basic Installation](#basic-installation)
   - [Installation Methods](#installation-methods)
-    - [Install All Dependencies](#install-all-dependencies)
-    - [Install Specific Dependencies](#install-specific-dependencies)
+    - [Installation instructions](#installation-instructions)
+    - [Installation with ArgoCD](#installation-with-argocd)
+      - [Install All Dependencies](#install-all-dependencies)
+      - [Install Specific Dependencies](#install-specific-dependencies)
+    - [Installation with CLI](#installation-with-cli)
+      - [Install All Dependencies](#install-all-dependencies-1)
+    - [Install Specific Dependencies](#install-specific-dependencies-1)
     - [Install a Subset of Dependencies](#install-a-subset-of-dependencies)
   - [Usage Guidelines](#usage-guidelines)
     - [For Administrators](#for-administrators)
@@ -57,29 +61,73 @@ To add a new dependency, follow the [Contributing](CONTRIBUTING.md#add-a-new-dep
 - Cluster admin permissions
 - Kustomize v5 or later (optional - `kubectl` has built-in Kustomize support)
 
-### Basic Installation
+## Installation Methods
+
+### Installation instructions
 
 ```bash
 # 1. Clone the repository
 git clone https://github.com/davidebianchi/rhoai-gitops.git
 cd rhoai-gitops
 
-# 2. Check out the branch matching your OpenShift AI version
-git checkout rhoai-3.0
+# 2. Modify as needed
 
-# 3. Install all dependencies
-kubectl apply -k dependencies
-
-# 4. Wait for operators to be ready
+# 3. Follow the desired tool installation instructions,
+#    using the correct branch matching your desired
+#    OpenShift AI version (e.g. rhoai-3.0)
 ```
 
-## Installation Methods
+### Installation with ArgoCD
 
-### Install All Dependencies
+To install the repository with ArgoCD, create a new ArgoCD application and point it to the repository with the desired branch.
+To ensure it will work, since it uses custom resources whose definitions are installed by the operators by OLM in a second step, you need to skip dry run on missing resources in the Application resource.
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ...
+spec:
+  syncPolicy:
+      syncOptions:
+        - SkipDryRunOnMissingResource=true
+```
+
+#### Install All Dependencies
+
+Create an application, setting the sync policy to skip dry run on missing resources, and point to the base directory `kustomization.yaml`.
+In this way, all dependencies will be installed automatically.
+
+#### Install Specific Dependencies
+
+To install specific dependencies, open [`dependencies/operators/kustomization.yaml`](dependencies/operators/kustomization.yaml) and comment out the dependencies you don't need.
+Do the same for [`configurations/kustomization.yaml`](configurations/kustomization.yaml).
+
+For example, if the Kueue operator is not needed, comment it out like this in [`dependencies/operators/kustomization.yaml`](dependencies/operators/kustomization.yaml):
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+components:
+  - ../../components/operators/cert-manager
+  # - ../../components/operators/kueue-operator
+```
+
+After that, setup the application to point to the base directory `kustomization.yaml` file.
+
+### Installation with CLI
+
+#### Install All Dependencies
 
 ```bash
 # Install all dependencies
 kubectl apply -k dependencies
+
+# Wait some seconds to let the operators install
+
+# Install operator configurations
+kubectl apply -k configurations
 ```
 
 ### Install Specific Dependencies
@@ -87,6 +135,11 @@ kubectl apply -k dependencies
 ```bash
 kubectl apply -k dependencies/operators/cert-manager
 kubectl apply -k dependencies/operators/kueue-operator
+
+# Wait some seconds to let the operators install
+
+# Install specific operator configurations
+kubectl apply -k configurations/kueue-operator
 ```
 
 ### Install a Subset of Dependencies
@@ -106,7 +159,11 @@ components:
 If you need the Kueue operator later, uncomment it and apply the changes:
 
 ```bash
-kubectl apply -k dependencies/operators
+# Install the dependencies
+kubectl apply -k dependencies/
+
+# Install the operator configurations
+kubectl apply -k configurations/
 ```
 
 ## Usage Guidelines
