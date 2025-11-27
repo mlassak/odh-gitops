@@ -25,6 +25,8 @@ declare -A OPERATORS=(
     [kueue-operator]="openshift-kueue-operator name=openshift-kueue-operator"
     [cluster-observability-operator]="openshift-cluster-observability-operator app.kubernetes.io/name=observability-operator"
     [opentelemetry-product]="openshift-opentelemetry-operator app.kubernetes.io/name=opentelemetry-operator"
+    [leader-worker-set]="openshift-lws-operator name=openshift-lws-operator"
+    [job-set-operator]="openshift-jobset-operator name=jobset-operator"
 )
 
 

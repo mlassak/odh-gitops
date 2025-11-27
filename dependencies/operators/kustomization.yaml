@@ -6,3 +6,5 @@ components:
   - ../../components/operators/kueue-operator
   - ../../components/operators/cluster-observability-operator
   - ../../components/operators/opentelemetry-product
+  - ../../components/operators/leader-worker-set
+  - ../../components/operators/job-set-operator
