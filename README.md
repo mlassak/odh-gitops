@@ -10,8 +10,6 @@ This repository provides a GitOps-based approach to deploying and managing OpenD
     - [How the Structure Works](#how-the-structure-works)
     - [Dependencies](#dependencies)
       - [Operator Configuration Requirements](#operator-configuration-requirements)
-        - [Tempo Operator](#tempo-operator)
-          - [Configuration Steps:](#configuration-steps)
         - [Red Hat Connectivity Link operator](#red-hat-connectivity-link-operator)
           - [Stage 1: Deploy base configuration](#stage-1-deploy-base-configuration)
           - [Stage 2: Enable TLS](#stage-2-enable-tls)
@@ -21,6 +19,8 @@ This repository provides a GitOps-based approach to deploying and managing OpenD
   - [Installation Methods](#installation-methods)
     - [Installation instructions](#installation-instructions)
     - [Installation with ArgoCD](#installation-with-argocd)
+      - [Prerequisites](#prerequisites-1)
+      - [Installation instructions](#installation-instructions-1)
       - [Install All Dependencies](#install-all-dependencies)
       - [Install Specific Dependencies](#install-specific-dependencies)
     - [Installation with CLI](#installation-with-cli)
@@ -47,7 +47,7 @@ The repository is designed to be applied in **layers**, providing flexibility in
 
 ### Dependencies
 
-| Operator                           | Purpose                                     | Namespace | Required By                  | Operators Required |
+| Operator                           | Purpose                                     | Namespace | Used By                  | Operators Required |
 |------------------------------------|---------------------------------------------|-----------|------------------------------|-------------|
 | **Cert-Manager**                   | Certificate management and TLS provisioning | `cert-manager-operator` | Model Serving (Kueue, Ray)   | |
 | **Kueue**                          | Job queue for distributed workloads         | `openshift-kueue-operator` | Model Serving (Ray), Trainer | Cert-Manager |
@@ -59,6 +59,8 @@ The repository is designed to be applied in **layers**, providing flexibility in
 | **Tempo Operator** | Distributed tracing backend | `openshift-tempo-operator` | Tracing infrastructure | |
 | **Red Hat Connectivity Link** | Multicloud application connectivity and API management | `kuadrant-system` | Model Serving (KServe) | Leader Worker Set, Cert-Manager |
 | **MariaDB Operator** | MariaDB for OpenShift | `mariadb-operator` | TrustyAI (optional, only if using database mode) | |
+| **Node Feature Discovery** | Detects hardware features and capabilities of nodes | `openshift-nfd` | LlamaStack Operator | |
+| **NVIDIA GPU Operator** | Enables GPU-accelerated workloads on NVIDIA hardware | `nvidia-gpu-operator` | Model Serving, LlamaStack Operator | Node Feature Discovery |
 
 #### Operator Configuration Requirements
 
@@ -157,6 +159,16 @@ cd odh-gitops
 ```
 
 ### Installation with ArgoCD
+
+#### Prerequisites
+
+- ArgoCD installed
+- Cluster admin permissions
+- The ArgoCD instance needs permissions to handle cluster configuration. Follow [this documentation](https://docs.redhat.com/en/documentation/red_hat_openshift_gitops/1.19/html/declarative_cluster_configuration/configuring-an-openshift-cluster-by-deploying-an-application-with-cluster-configurations#gitops-additional-permissions-for-cluster-config_configuring-an-openshift-cluster-by-deploying-an-application-with-cluster-configurations). Additional permissions needed are:
+  - all actions on kueues.kueue.openshift.io
+  - all actions on kuadrants.kuadrant.io
+
+#### Installation instructions
 
 To install the repository with ArgoCD, create a new ArgoCD application and point it to the repository with the desired branch.
 To ensure it will work, since it uses custom resources whose definitions are installed by the operators by OLM in a second step, you need to skip dry run on missing resources in the Application resource.
