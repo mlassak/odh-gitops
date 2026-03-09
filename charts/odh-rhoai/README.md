@@ -271,6 +271,30 @@ Then run the TLS preparation script after the Kuadrant operator has created the 
 ./scripts/prepare-authorino-tls.sh
 ```
 
+### Example: Pin operator to specific version
+
+By default, operators install the latest version available in their channel. To pin an operator to a specific version:
+
+```yaml
+# values.yaml
+dependencies:
+  rhcl:
+    enabled: auto
+    olm:
+      channel: stable
+      version: v1.2.1  # Pin to specific version
+```
+
+**How it works:**
+- **Without `version`**: OLM installs the latest operator version from the channel
+- **With `version`**: OLM installs the specified version (`startingCSV: rhcl-operator.v1.2.1`)
+- The version must exist in the specified channel or the subscription will fail
+
+**Use cases:**
+- Testing with a known-good version
+- Ensuring consistent deployments across environments
+- Avoiding automatic upgrades to newer versions
+
 ## Values Reference
 
 ### Global Settings

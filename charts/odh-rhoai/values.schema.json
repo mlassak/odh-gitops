@@ -330,6 +330,10 @@
             "type": "string"
           },
           "description": "Target namespaces for OperatorGroup (omit for AllNamespaces mode)"
+        },
+        "version": {
+          "type": "string",
+          "description": "Operator version for version pinning (e.g., v1.0.5). If omitted, installs latest from channel. Auto-constructs startingCSV: $name.$version"
         }
       },
       "required": ["channel", "name", "namespace"],

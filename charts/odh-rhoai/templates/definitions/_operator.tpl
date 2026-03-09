@@ -49,6 +49,7 @@ Arguments (passed as dict):
   - name: subscription/operator name
   - namespace: namespace name
   - channel: subscription channel
+  - version: operator version (optional, for version pinning) input: v$version (e.g., "v1.0.5") to form startingCSV: $name.$version
   - source: catalog source (optional, uses global default)
   - sourceNamespace: catalog source namespace (optional, uses global default)
   - installPlanApproval: install plan approval (optional, uses global default)
@@ -72,6 +73,9 @@ spec:
   name: {{ .name }}
   source: {{ $source }}
   sourceNamespace: {{ $sourceNamespace }}
+  {{- with .version }}
+  startingCSV: {{ $.name }}.{{ . }}
+  {{- end }}
   {{- with .config }}
   config:
     {{- toYaml . | nindent 4 }}
@@ -84,6 +88,7 @@ Arguments (passed as dict):
   - name: operator name
   - namespace: namespace name
   - channel: subscription channel
+  - version: operator version (optional, for version pinning) input: v$version (e.g., "v1.0.5") to form startingCSV: $name.$version
   - source: catalog source (optional)
   - sourceNamespace: catalog source namespace (optional)
   - installPlanApproval: install plan approval (optional)
