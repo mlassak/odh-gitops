@@ -3,5 +3,4 @@ kind: Component
 
 resources:
   - namespace.yaml
-  - operatorgroup.yaml
   - subscription.yaml
