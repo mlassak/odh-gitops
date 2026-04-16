@@ -456,17 +456,6 @@ rules:
       - update
       - watch
   - apiGroups:
-      - ""
-    resources:
-      - events
-    verbs:
-      - create
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
       - admissionregistration.k8s.io
     resources:
       - mutatingwebhookconfigurations
@@ -2171,7 +2160,7 @@ spec:
   selector:
     name: rhai-operator
 ---
-# Source: rhai-on-xks-chart/templates/webhooks/service-rhods-operator-webhook-service.yaml
+# Source: rhai-on-xks-chart/templates/webhooks/service-rhai-operator-webhook-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -2250,6 +2239,14 @@ spec:
               value: rhai-operator-controller-webhook-cert
             - name: RHAI_WEBHOOK_SERVICE_NAME
               value: rhai-operator-webhook-service
+            - name: RHAI_WEBHOOK_CERT_NAME
+              value: rhai-operator-webhook-cert
+            - name: RHAI_CA_SECRET_NAME
+              value: rhaii-ca
+            - name: RHAI_CA_SECRET_NAMESPACE
+              value: cert-manager
+            - name: RHAI_ISSUER_REF_NAME
+              value: rhaii-ca-issuer
             - name: OPERATOR_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -2395,6 +2392,14 @@ spec:
               value: "3.4.0"
             - name: ODH_PLATFORM_TYPE
               value: XKS
+            - name: RHAI_CA_SECRET_NAME
+              value: rhaii-ca
+            - name: RHAI_CA_SECRET_NAMESPACE
+              value: cert-manager
+            - name: RHAI_ISSUER_REF_NAME
+              value: rhaii-ca-issuer
+            - name: RHAI_ISTIO_CA_CERTIFICATE_PATH
+              value: /var/run/secrets/rhaii/ca.crt
             - name: OPERATOR_NAME
               value: rhai-operator
             - name: OPERATOR_NAMESPACE
@@ -2437,10 +2442,40 @@ spec:
             capabilities:
               drop:
                 - ALL
+            readOnlyRootFilesystem: true
           volumeMounts:
             - mountPath: /tmp/k8s-webhook-server/serving-certs
               name: cert
               readOnly: true
+            - mountPath: /opt/manifests
+              name: manifests
+            - mountPath: /tmp
+              name: tmp
+      initContainers:
+        - command:
+            - cp
+            - -r
+            - /opt/manifests-template/.
+            - /opt/manifests/
+          image: quay.io/opendatahub/opendatahub-operator:latest
+          imagePullPolicy: Always
+          name: copy-manifests
+          resources:
+            limits:
+              cpu: 100m
+              memory: 256Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - mountPath: /opt/manifests
+              name: manifests
       securityContext:
         runAsNonRoot: true
         seccompProfile:
@@ -2452,20 +2487,22 @@ spec:
           secret:
             defaultMode: 420
             secretName: rhai-operator-controller-webhook-cert
+        - emptyDir:
+            sizeLimit: 256Mi
+          name: manifests
+        - emptyDir:
+            medium: Memory
+            sizeLimit: 10Mi
+          name: tmp
 ---
-# Source: rhai-on-xks-chart/templates/webhooks/mutatingwebhookconfiguration-rhods-operator-mutating-webhook-configuration.yaml
+# Source: rhai-on-xks-chart/templates/webhooks/mutatingwebhookconfiguration-rhai-operator-mutating-webhook-configuration.yaml
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: redhat-ods-operator/opendatahub-operator-webhook-cert
+    cert-manager.io/inject-ca-from: redhat-ods-operator/rhai-operator-webhook-cert
   name: rhai-operator-mutating-webhook-configuration
   namespace: redhat-ods-operator
-  labels:
-    app.kubernetes.io/created-by: rhai-operator
-    app.kubernetes.io/instance: rhai-operator
-    app.kubernetes.io/name: rhai-operator-mutating-webhook-configuration
-    app.kubernetes.io/part-of: rhai-operator
 webhooks:
   - admissionReviewVersions:
       - v1
@@ -2776,7 +2813,7 @@ spec:
 
               echo "Step 2: Waiting for cert-manager CA secret required by Gateway CR 'inference-gateway'..."
               ELAPSED=0
-              until kubectl get secret opendatahub-ca -n cert-manager >/dev/null 2>&1; do
+              until kubectl get secret rhaii-ca -n cert-manager >/dev/null 2>&1; do
                 if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
                   echo "ERROR: Timed out waiting for CA secret after ${TIMEOUT}s"
                   exit 1
@@ -2788,7 +2825,7 @@ spec:
               echo "CA secret is available."
 
               echo "Step 3: Creating CA bundle ConfigMap for Gateway CR 'inference-gateway'..."
-              kubectl get secret opendatahub-ca -n cert-manager \
+              kubectl get secret rhaii-ca -n cert-manager \
                 -o jsonpath='{.data.ca\.crt}' | base64 -d > /tmp/ca.crt
               kubectl create configmap rhaii-ca-bundle \
                 --from-file=ca.crt=/tmp/ca.crt \
