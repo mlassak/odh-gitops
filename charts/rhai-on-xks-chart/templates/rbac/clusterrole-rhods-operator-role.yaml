@@ -80,12 +80,6 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - pods/exec
-    verbs:
-      - create
-  - apiGroups:
-      - ""
-    resources:
       - pods/log
     verbs:
       - get
@@ -141,6 +135,30 @@ rules:
       - update
       - watch
   - apiGroups:
+      - apiextensions.k8s.io
+    resourceNames:
+      - datascienceclusters.datasciencecluster.opendatahub.io
+    resources:
+      - customresourcedefinitions/status
+    verbs:
+      - patch
+  - apiGroups:
+      - apiextensions.k8s.io
+    resourceNames:
+      - dscinitializations.dscinitialization.opendatahub.io
+    resources:
+      - customresourcedefinitions/status
+    verbs:
+      - patch
+  - apiGroups:
+      - apiextensions.k8s.io
+    resourceNames:
+      - platforms.config.opendatahub.io
+    resources:
+      - customresourcedefinitions/status
+    verbs:
+      - patch
+  - apiGroups:
       - apiregistration.k8s.io
     resources:
       - apiservices
@@ -159,18 +177,6 @@ rules:
       - deployments
       - deployments/finalizers
       - statefulsets
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - argoproj.io
-    resources:
-      - workflows
     verbs:
       - create
       - delete
@@ -268,20 +274,19 @@ rules:
       - components.platform.opendatahub.io
     resources:
       - aigateways
+      - aihubs
+      - aipipelines
       - dashboards
-      - datasciencepipelines
       - feastoperators
       - kserves
       - kueues
       - mcplifecycleoperators
       - mlflowoperators
       - modelmeshservings
-      - modelregistries
       - ogxs
       - rays
       - sparkoperators
       - trainers
-      - trainingoperators
       - trustyais
       - workbenches
     verbs:
@@ -296,20 +301,18 @@ rules:
       - components.platform.opendatahub.io
     resources:
       - aigateways/finalizers
+      - aihubs/finalizers
       - dashboards/finalizers
-      - datasciencepipelines/finalizers
       - feastoperators/finalizers
       - kserves/finalizers
       - kueues/finalizers
       - mcplifecycleoperators/finalizers
       - mlflowoperators/finalizers
       - modelmeshservings/finalizers
-      - modelregistries/finalizers
       - ogxs/finalizers
       - rays/finalizers
       - sparkoperators/finalizers
       - trainers/finalizers
-      - trainingoperators/finalizers
       - trustyais/finalizers
       - workbenches/finalizers
     verbs:
@@ -318,20 +321,18 @@ rules:
       - components.platform.opendatahub.io
     resources:
       - aigateways/status
+      - aihubs/status
       - dashboards/status
-      - datasciencepipelines/status
       - feastoperators/status
       - kserves/status
       - kueues/status
       - mcplifecycleoperators/status
       - mlflowoperators/status
       - modelmeshservings/status
-      - modelregistries/status
       - ogxs/status
       - rays/status
       - sparkoperators/status
       - trainers/status
-      - trainingoperators/status
       - trustyais/status
       - workbenches/status
     verbs:
@@ -341,24 +342,29 @@ rules:
   - apiGroups:
       - components.platform.opendatahub.io
     resources:
+      - aipipelines/status
+      - codeflares/status
+    verbs:
+      - get
+  - apiGroups:
+      - components.platform.opendatahub.io
+    resources:
       - codeflares
     verbs:
       - get
       - list
       - watch
   - apiGroups:
-      - components.platform.opendatahub.io
-    resources:
-      - codeflares/status
-    verbs:
-      - get
-  - apiGroups:
       - config.opendatahub.io
     resources:
       - platforms
     verbs:
+      - create
+      - delete
       - get
       - list
+      - patch
+      - update
       - watch
   - apiGroups:
       - config.opendatahub.io
@@ -381,16 +387,11 @@ rules:
       - authentications
       - clusterversions
       - infrastructures
+      - ingresses
     verbs:
       - get
       - list
       - watch
-  - apiGroups:
-      - config.openshift.io
-    resources:
-      - ingresses
-    verbs:
-      - get
   - apiGroups:
       - console.openshift.io
     resources:
@@ -461,27 +462,6 @@ rules:
       - patch
       - update
   - apiGroups:
-      - datasciencepipelinesapplications.opendatahub.io
-    resources:
-      - datasciencepipelinesapplications
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - datasciencepipelinesapplications.opendatahub.io
-    resources:
-      - datasciencepipelinesapplications/finalizers
-      - datasciencepipelinesapplications/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
       - dscinitialization.opendatahub.io
     resources:
       - dscinitializations
@@ -500,7 +480,6 @@ rules:
       - dscinitializations/finalizers
       - dscinitializations/status
     verbs:
-      - delete
       - get
       - patch
       - update
@@ -537,35 +516,6 @@ rules:
       - list
       - patch
       - watch
-  - apiGroups:
-      - features.opendatahub.io
-    resources:
-      - featuretrackers
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - features.opendatahub.io
-    resources:
-      - featuretrackers/finalizers
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - features.opendatahub.io
-    resources:
-      - featuretrackers/status
-    verbs:
-      - delete
-      - get
-      - patch
-      - update
   - apiGroups:
       - gateway.networking.k8s.io
     resources:
@@ -707,32 +657,14 @@ rules:
       - list
       - watch
   - apiGroups:
-      - modelregistry.opendatahub.io
+      - migration.k8s.io
+      - storagemigration.k8s.io
     resources:
-      - modelregistries
+      - storageversionmigrations
     verbs:
       - create
       - delete
       - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - modelregistry.opendatahub.io
-    resources:
-      - modelregistries/finalizers
-    verbs:
-      - get
-      - update
-  - apiGroups:
-      - modelregistry.opendatahub.io
-    resources:
-      - modelregistries/status
-    verbs:
-      - get
-      - patch
-      - update
   - apiGroups:
       - monitoring.coreos.com
     resources:
@@ -851,6 +783,23 @@ rules:
       - list
       - patch
       - update
+      - watch
+  - apiGroups:
+      - olm.operatorframework.io
+    resources:
+      - clustercatalogs
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - olm.operatorframework.io
+    resources:
+      - clusterextensions
+    verbs:
+      - delete
+      - get
+      - list
       - watch
   - apiGroups:
       - opendatahub.io
@@ -990,20 +939,10 @@ rules:
       - update
       - watch
   - apiGroups:
-      - ray.io
+      - rbac.authorization.k8s.io
     resources:
-      - rayclusters
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-  - apiGroups:
-      - ray.io
-    resources:
-      - rayjobs
-      - rayservices
+      - clusterrolebindings
+      - rolebindings
     verbs:
       - create
       - delete
@@ -1015,12 +954,18 @@ rules:
   - apiGroups:
       - rbac.authorization.k8s.io
     resources:
-      - clusterrolebindings
       - clusterroles
-      - rolebindings
       - roles
     verbs:
-      - '*'
+      - bind
+      - create
+      - delete
+      - escalate
+      - get
+      - list
+      - patch
+      - update
+      - watch
   - apiGroups:
       - route.openshift.io
     resources:
@@ -1064,6 +1009,7 @@ rules:
       - services.platform.opendatahub.io
     resources:
       - auths
+      - databaseservices
       - gatewayconfigs
       - monitorings
     verbs:
@@ -1078,6 +1024,7 @@ rules:
       - services.platform.opendatahub.io
     resources:
       - auths/finalizers
+      - databaseservices/finalizers
       - gatewayconfigs/finalizers
       - monitorings/finalizers
     verbs:
@@ -1086,6 +1033,7 @@ rules:
       - services.platform.opendatahub.io
     resources:
       - auths/status
+      - databaseservices/status
       - gatewayconfigs/status
       - monitorings/status
     verbs:
@@ -1101,18 +1049,6 @@ rules:
       - delete
       - get
       - patch
-  - apiGroups:
-      - template.openshift.io
-    resources:
-      - templates
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
   - apiGroups:
       - tempo.grafana.com
     resources:
